@@ -1,7 +1,10 @@
-
 import React, { useState, useEffect, useRef } from 'react';
+import LoginPage from './LoginPage';
+import SignupPage from './SignupPage';
+import WordCloud from './questionTypes/WordCloud';
+import PollComponent from './questionTypes/Poll';
 
-// --- Icon Components (Self-contained SVG) ---
+// // // // --- Icon Components (Self-conSVG) ---
 const SearchIcon = ({ size = 24, className = "" }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
     <circle cx="11" cy="11" r="8"></circle>
@@ -137,7 +140,7 @@ const PencilIcon = ({ size = 24, className = "" }) => (
 const TabletIcon = ({ size = 24, className = "" }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
     <rect width="16" height="20" x="4" y="2" rx="2" ry="2"></rect>
-    <line x1="12" y1="18" y2="20"></line>
+    <line x1="12" y1="18" x2="12" y2="20"></line>
   </svg>
 );
 
@@ -368,6 +371,14 @@ const DownloadIcon = ({ size = 24, className = "" }) => (
 // --- Main App Component ---
 const App = () => {
   const [activeFeature, setActiveFeature] = useState('dashboard');
+  const [user, setUser] = useState(() => {
+    try {
+      const s = localStorage.getItem('app_demo_session');
+      return s ? JSON.parse(s) : null;
+    } catch {
+      return null;
+    }
+  });
   const [newMentiDropdownOpen, setNewMentiDropdownOpen] = useState(false);
   const [wordCloudWords, setWordCloudWords] = useState({});
   const [newWord, setNewWord] = useState('');
@@ -548,12 +559,29 @@ const App = () => {
         </div>
         {/* Right side */}
         <div className="flex items-center space-x-4">
-          <div className="p-2 text-gray-600 hover:text-gray-800 rounded-full cursor-pointer">
-            <BellIcon size={24} />
-          </div>
-          <div className="h-8 w-8 bg-purple-500 rounded-full flex items-center justify-center text-white font-bold cursor-pointer">
-            J
-          </div>
+          {user ? (
+            <>
+              <div className="p-2 text-gray-600 hover:text-gray-800 rounded-full cursor-pointer">
+                <BellIcon size={24} />
+              </div>
+              <div className="flex items-center space-x-3">
+                <div className="h-8 w-8 bg-purple-500 rounded-full flex items-center justify-center text-white font-bold">{(user.email || 'U')[0].toUpperCase()}</div>
+                <div className="text-sm text-gray-700">{user.email}</div>
+                <button onClick={() => { localStorage.removeItem('app_demo_session'); setUser(null); setActiveFeature('dashboard'); }} className="px-3 py-1 bg-red-100 text-red-700 rounded">Logout</button>
+              </div>
+            </>
+          ) : (
+            <>
+              <button onClick={() => setActiveFeature('login')} className="text-sm font-semibold text-gray-600 hover:text-gray-900">Log in</button>
+              <button onClick={() => setActiveFeature('signup')} className="flex items-center px-3 py-1 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-full shadow-sm transition-colors duration-200">Sign up</button>
+              <div className="p-2 text-gray-600 hover:text-gray-800 rounded-full cursor-pointer">
+                <BellIcon size={24} />
+              </div>
+              <div className="h-8 w-8 bg-purple-500 rounded-full flex items-center justify-center text-white font-bold cursor-pointer">
+                J
+              </div>
+            </>
+          )}
         </div>
       </div>
     </header>
@@ -624,7 +652,20 @@ const App = () => {
   ];
 
   const FeatureCard = ({ icon, title }) => (
-    <div className="bg-white p-6 rounded-2xl shadow-md border border-gray-200 flex flex-col items-center justify-center text-center transition-transform transform hover:scale-105 duration-300 cursor-pointer">
+    <div onClick={() => {
+        const key = title.toLowerCase().replace(/\s+/g, '-');
+        // map some friendly names
+        const map = {
+          'word cloud': 'word-cloud',
+          'poll': 'poll',
+          'open ended': 'open-ended',
+          'scales': 'scales',
+          'ranking': 'ranking',
+          'pin on image': 'pin-on-image'
+        };
+        setActiveFeature(map[title.toLowerCase()] || key);
+      }}
+      className="bg-white p-6 rounded-2xl shadow-md border border-gray-200 flex flex-col items-center justify-center text-center transition-transform transform hover:scale-105 duration-300 cursor-pointer">
       <div className="mb-4">{icon}</div>
       <p className="font-semibold text-lg text-gray-800">{title}</p>
     </div>
@@ -644,6 +685,36 @@ const App = () => {
       <div className="p-4">
         <p className="font-semibold text-sm text-gray-800 truncate">{title}</p>
       </div>
+    </div>
+  );
+
+  // Lightweight feature views
+
+  const OpenEnded = () => (
+    <div className="p-8 bg-white rounded-2xl shadow-md">
+      <h2 className="text-2xl font-bold mb-4">Open ended</h2>
+      <p className="text-gray-600">Collect free-text responses from participants.</p>
+    </div>
+  );
+
+  const Scales = () => (
+    <div className="p-8 bg-white rounded-2xl shadow-md">
+      <h2 className="text-2xl font-bold mb-4">Scales</h2>
+      <p className="text-gray-600">Create a Likert scale or rating question.</p>
+    </div>
+  );
+
+  const Ranking = () => (
+    <div className="p-8 bg-white rounded-2xl shadow-md">
+      <h2 className="text-2xl font-bold mb-4">Ranking</h2>
+      <p className="text-gray-600">Ask participants to rank items.</p>
+    </div>
+  );
+
+  const PinOnImage = () => (
+    <div className="p-8 bg-white rounded-2xl shadow-md">
+      <h2 className="text-2xl font-bold mb-4">Pin on Image</h2>
+      <p className="text-gray-600">Ask participants to pin locations on an image.</p>
     </div>
   );
 
@@ -833,7 +904,7 @@ const App = () => {
     );
   };
 
-  const WordCloud = ({ setActiveFeature, title = '', question = '', initialKeywords = [] }) => {
+  function WordCloud({ setActiveFeature, title = '', question = '', initialKeywords = [] }) {
     const [words, setWords] = useState(() => {
       const obj = {};
       (initialKeywords || []).forEach(k => {
@@ -900,7 +971,7 @@ const App = () => {
   
   return (
     <div className="min-h-screen bg-gray-50 font-sans text-gray-900 antialiased">
-      <style>
+  <style>
         {`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         .font-sans {
@@ -924,6 +995,19 @@ const App = () => {
         `}
       </style>
       {activeFeature !== 'generated-presentation' && <Header />}
+      {/* Auth pages take over the viewport */}
+      {activeFeature === 'login' && (
+        <LoginPage onDone={() => {
+          try { const s = localStorage.getItem('app_demo_session'); setUser(s ? JSON.parse(s) : null); } catch { setUser(null) }
+          setActiveFeature('dashboard');
+        }} onSwitchToSignup={() => setActiveFeature('signup')} />
+      )}
+      {activeFeature === 'signup' && (
+        <SignupPage onDone={() => {
+          try { const s = localStorage.getItem('app_demo_session'); setUser(s ? JSON.parse(s) : null); } catch { setUser(null) }
+          setActiveFeature('dashboard');
+        }} onSwitchToLogin={() => setActiveFeature('login')} />
+      )}
       <main className="container mx-auto px-4 py-8">
         {activeFeature === 'dashboard' && (
           <>
@@ -970,6 +1054,11 @@ const App = () => {
         {activeFeature === 'new-presentation-options' && <NewPresentationOptions setActiveFeature={setActiveFeature} />}
         {activeFeature === 'ai-presentation' && <StartWithAIPresentation setActiveFeature={setActiveFeature} />}
         {activeFeature === 'generated-presentation' && <GeneratedPresentation setActiveFeature={setActiveFeature} slides={slides} currentSlideIndex={currentSlideIndex} />}
+  {activeFeature === 'poll' && <PollComponent />}
+   {activeFeature === 'open-ended' && <OpenEnded />}
+  {activeFeature === 'scales' && <Scales />}
+  {activeFeature === 'ranking' && <Ranking />}
+  {activeFeature === 'pin-on-image' && <PinOnImage />}
       </main>
     </div>
   );
